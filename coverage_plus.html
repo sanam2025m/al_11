@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>سنام — طلب تغطية (محسن)</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>
+    window.SANAM_CONFIG = { WEB_APP_URL: "https://script.google.com/macros/s/AKfycbzPP4B6t38M-jwM1sqaZYZD3Eyws1wF6TJEZ3t4k2Dx0_iPaIL3fNFhkCcc65VaD0xk/exec" };
+    window.SHIFT_LIST = ["07:00-15:00","15:00-23:00","23:00-07:00"];
+  </script>
+  <style>
+    .card{ background:#fff; border:1px solid #eadfd7; border-radius:16px; padding:16px; }
+    .grid{ display:grid; gap:12px; grid-template-columns:1fr; }
+    @media(min-width:860px){ .grid.two{ grid-template-columns:1fr 1fr; } .grid.three{ grid-template-columns:repeat(3,1fr); } }
+    .field label{ display:block; font-weight:800; margin:8px 4px; }
+    .input{ width:100%; padding:14px; border:1px solid #e2d8d0; border-radius:14px; background:#f2eee9; outline:none; }
+    .input:focus{ box-shadow:0 0 0 3px rgba(107,79,69,.2); background:#fff; }
+    .btn{ padding:14px 16px; border-radius:14px; border:1px solid #d8cec7; background:#8b8176; color:#fff; font-weight:800; cursor:pointer; }
+    .btn.secondary{ background:#fff; color:#444; }
+    .status-pill{ display:inline-flex; gap:6px; align-items:center; padding:6px 10px; border-radius:999px; border:1px solid #eee; font-weight:700; font-size:12px; }
+    .status-pill.pending{ background:#fff8e1; border-color:#ffe0b2; color:#8a5300; }
+    .status-pill.ok{ background:#e8f5e9; border-color:#cde6cf; color:#1b5e20; }
+    .status-pill.bad{ background:#ffebee; border-color:#ffd1d6; color:#b71c1c; }
+    table{ width:100%; border-collapse:separate; border-spacing:0; min-width:980px; }
+    thead th{ position:sticky; top:0; background:#faf7f4; text-align:right; padding:10px; font-size:13px; border-bottom:1px solid #efe6df; }
+    tbody td{ padding:10px; border-bottom:1px solid #f1e9e3; font-size:14px; vertical-align:middle; }
+    tbody tr:nth-child(even){ background:#fcf9f7; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div class="brand"><img src="logo.png" alt="SANAM"/></div>
+      <div class="badge">طلب تغطية — إرسال واعتماد</div>
+    </header>
+
+    <section class="content card">
+      <h3 style="margin:0 0 10px;">بيانات الطلب</h3>
+      <div class="grid two">
+        <div class="field">
+          <label for="name">الاسم</label>
+          <input id="name" class="input" placeholder="الاسم الرباعي"/>
+        </div>
+        <div class="field">
+          <label for="nid">رقم الهوية</label>
+          <input id="nid" class="input" inputmode="numeric" dir="ltr" placeholder="10 أرقام"/>
+        </div>
+
+        <div class="field">
+          <label for="phone">الجوال</label>
+          <input id="phone" class="input" inputmode="tel" dir="ltr" placeholder="05XXXXXXXX"/>
+        </div>
+        <div class="field">
+          <label for="location">الموقع المطلوب</label>
+          <input id="location" class="input" placeholder="مثال: بوابة 2"/>
+        </div>
+
+        <div class="field">
+          <label for="shift">الوردية</label>
+          <select id="shift" class="input"></select>
+          <div class="kicker">تُختار تلقائيًا حسب الوقت ويمكن تعديلها.</div>
+        </div>
+        <div class="field">
+          <label for="amount">قيمة التغطية (ريال سعودي)</label>
+          <input id="amount" class="input" inputmode="decimal" dir="ltr" placeholder="مثال: 150"/>
+        </div>
+
+        <div class="field">
+          <label for="iban">الآيبان (IBAN)</label>
+          <input id="iban" class="input" dir="ltr" placeholder="SA.."/>
+        </div>
+        <div class="field">
+          <label for="coveredName">الفرد المُغطّى عنه</label>
+          <input id="coveredName" class="input" placeholder="اسم الفرد المُغطّى عنه"/>
+        </div>
+
+        <div class="field">
+          <label for="coveredNid">هوية المُغطّى عنه</label>
+          <input id="coveredNid" class="input" inputmode="numeric" dir="ltr" placeholder="10 أرقام"/>
+        </div>
+        <div class="field">
+          <label for="note">ملاحظات (إن وجدت)</label>
+          <textarea id="note" class="input" rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top:10px;">
+        <button id="btnSend" class="btn">إرسال الطلب للمشرف</button>
+      </div>
+      <div class="kicker">سيتم الإرسال إلى بريد المشرف تلقائيًا وإضافة الطلب إلى الشيت بوضع "بانتظار الاعتماد".</div>
+    </section>
+
+    <section class="content card" style="margin-top:14px;">
+      <h3 style="margin:0 0 10px;">طلباتي</h3>
+      <div class="table" style="overflow:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>الحالة</th>
+              <th>OTP</th>
+              <th>الموقع</th>
+              <th>الوردية</th>
+              <th>المبلغ</th>
+              <th>الآيبان</th>
+              <th>المُغطّى عنه</th>
+              <th>هوية المُغطّى عنه</th>
+              <th>الوقت</th>
+            </tr>
+          </thead>
+          <tbody id="rows"><tr><td colspan="9">—</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="content card" id="adminPanel" style="margin-top:14px; display:none;">
+      <h3 style="margin:0 0 10px;">إدارة الطلب (للمشرف)</h3>
+      <div class="actions">
+        <button id="btnApprove" class="btn">قبول</button>
+        <button id="btnReject" class="btn secondary">رفض</button>
+      </div>
+      <div class="kicker">يظهر هذا القسم إذا فُتحت الصفحة بمعامل <code>?admin=1&row=رقم_الصف</code></div>
+    </section>
+  </main>
+
+<script>
+(function(){
+  const WEB_APP = window.SANAM_CONFIG.WEB_APP_URL;
+  const SL = window.SHIFT_LIST;
+  const $ = (id)=>document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const isAdmin = params.get('admin')==='1';
+  const adminRow = params.get('row');
+
+  // تعبئة الورديات + اختيار تلقائي
+  const sh = $("shift"); sh.innerHTML = SL.map(s=>`<option>${s}</option>`).join('');
+  sh.value = detectShift() || SL[0];
+  function detectShift(){
+    const now = new Date(); const hm = now.toTimeString().slice(0,5);
+    return SL.find(r=>{const [s,e]=r.split('-'); return s<e ? (hm>=s && hm<e) : (hm>=s || hm<e);});
+  }
+
+  // حقل الآيبان: إجبار "SA" في البداية
+  $("iban").addEventListener('input', (e)=>{
+    const v = e.target.value.toUpperCase().replace(/\s+/g,'');
+    e.target.value = v.startsWith('SA') ? v : ('SA'+v.replace(/^SA+/,''));
+  });
+
+  // جمع الحقول
+  function onlyDigits(s){ return String(s||'').replace(/\D+/g,''); }
+  async function getDeviceId_(){
+    const key="sanam_device_id"; let id=localStorage.getItem(key);
+    if(!id){ id="WEB-"+Math.random().toString(36).slice(2); localStorage.setItem(key,id); }
+    return id;
+  }
+
+  function validate(){
+    const name = $("name").value.trim();
+    const nid = onlyDigits($("nid").value);
+    const phone = $("phone").value.trim();
+    const location = $("location").value.trim();
+    const amount = Number(($("amount").value||'').toString().replace(/[^0-9.]/g,''));
+    const iban = $("iban").value.trim().toUpperCase();
+    const coveredName = $("coveredName").value.trim();
+    const coveredNid = onlyDigits($("coveredNid").value);
+    if(!name || name.split(' ').length<4) return "الاسم الرباعي مطلوب";
+    if(!/^\d{10}$/.test(nid)) return "رقم الهوية يجب أن يكون 10 أرقام";
+    if(!/^05\d{8}$/.test(phone)) return "رقم الجوال يجب أن يبدأ بـ05 ويتكون من 10 أرقام";
+    if(!location) return "أدخل الموقع المطلوب";
+    if(!(amount>0)) return "أدخل قيمة التغطية بشكل صحيح";
+    if(!/^SA[A-Z0-9]{22}$/i.test(iban)) return "رقم الآيبان يجب أن يبدأ SA وطوله 24 خانة";
+    if(!coveredName) return "أدخل اسم المُغطّى عنه";
+    if(!/^\d{10}$/.test(coveredNid)) return "هوية المُغطّى عنه يجب أن تكون 10 أرقام";
+    return "";
+  }
+
+  // إرسال الطلب
+  $("btnSend").addEventListener("click", async ()=>{
+    const err = validate(); if(err) return alert(err);
+    const payload = {
+      action:"coverage_request_v2",
+      name: $("name").value.trim(),
+      nationalId: onlyDigits($("nid").value),
+      phone: $("phone").value.trim(),
+      location: $("location").value.trim(),
+      shift: $("shift").value.trim(),
+      amount: Number(($("amount").value||'').toString().replace(/[^0-9.]/g,'')),
+      iban: $("iban").value.trim().toUpperCase(),
+      coveredName: $("coveredName").value.trim(),
+      coveredNid: onlyDigits($("coveredNid").value),
+      note: $("note").value.trim(),
+      deviceId: await getDeviceId_()
+    };
+    const r = await fetch(WEB_APP,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const j = await r.json();
+    if(j.ok){ alert("تم إرسال الطلب وسيظهر هنا."); await loadMyRequests(); }
+    else { alert("تعذر الإرسال: "+(j.error||"")); }
+  });
+
+  // عرض طلباتي (حسب الهوية أو الجهاز)
+  async function loadMyRequests(){
+    const nid = onlyDigits($("nid").value);
+    const deviceId = await getDeviceId_();
+    const r = await fetch(WEB_APP+'?action=coverage_list&nid='+encodeURIComponent(nid)+'&device='+encodeURIComponent(deviceId));
+    const j = await r.json();
+    const rows = Array.isArray(j.rows)? j.rows: [];
+    $("rows").innerHTML = rows.length? rows.map(renderRow).join('') : '<tr><td colspan="9">لا توجد طلبات.</td></tr>';
+  }
+  function renderRow(r){
+    const pill = r.status==='مقبول' ? 'ok' : (r.status==='مرفوض'?'bad':'pending');
+    return `<tr>
+      <td><span class="status-pill ${pill}">${r.status||'-'}</span></td>
+      <td class="mono">${r.otp||'-'}</td>
+      <td>${r.location||'-'}</td>
+      <td>${r.shift||'-'}</td>
+      <td>${r.amount!=null? (r.amount+' ر.س'): '-'}</td>
+      <td class="mono">${r.iban||'-'}</td>
+      <td>${r.coveredName||'-'}</td>
+      <td class="mono">${r.coveredNid||'-'}</td>
+      <td>${r.time||'-'}</td>
+    </tr>`;
+  }
+
+  // لوحة المشرف المصغرة (اختيارية)
+  if(isAdmin){
+    document.getElementById('adminPanel').style.display='block';
+    document.getElementById('btnApprove').addEventListener('click', ()=> decide('approve'));
+    document.getElementById('btnReject').addEventListener('click',  ()=> decide('reject'));
+  }
+  async function decide(kind){
+    if(!adminRow) return alert('لا يوجد rowIndex');
+    const r = await fetch(WEB_APP, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'coverage_decide', rowIndex: Number(adminRow), decision: kind })});
+    const j = await r.json();
+    alert(j.ok? 'تم تحديث الحالة' : ('تعذر: '+(j.error||'')));
+    await loadMyRequests();
+  }
+
+  // تحميل أولي
+  loadMyRequests();
+})();
+</script>
+</body>
+</html>

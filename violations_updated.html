@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>سنام — المخالفات</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>window.SANAM_CONFIG = { WEB_APP_URL: "https://script.google.com/macros/s/AKfycbzPP4B6t38M-jwM1sqaZYZD3Eyws1wF6TJEZ3t4k2Dx0_iPaIL3fNFhkCcc65VaD0xk/exec" };</script>
+  <style>
+    .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+    .search{ flex:1; min-width:220px; } .search input{ width:100%; padding:12px; border:1px solid #e2d8d0; border-radius:14px; background:#f2eee9; outline:none; }
+    .search input:focus{ box-shadow:0 0 0 3px rgba(107,79,69,.2); background:#fff; }
+    .refresh{ padding:10px 12px; border-radius:12px; border:1px solid #e2d8d0; background:#fff; cursor:pointer; }
+    .list{ display:grid; gap:12px; } .card{ background:#fff; border:1px solid #eadfd7; border-radius:16px; padding:14px; display:grid; gap:10px; }
+    .head{ display:flex; align-items:center; gap:10px; justify-content:space-between; } .title{ font-weight:800; font-size:16px; display:flex; gap:8px; align-items:center; }
+    .subtle{ color:#7a7a7a; font-size:12px; } .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .kv{ background:#f9f6f2; border:1px dashed #e7dbd2; border-radius:12px; padding:10px; }
+    .kv b{ display:block; color:#6a5d52; font-size:12px; margin-bottom:6px; }
+    .row{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+    @media(max-width:900px){ .row{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    .empty{ text-align:center; color:#777; padding:24px; border:1px dashed #e4d7cd; border-radius:16px; background:#fff; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div class="brand"><img src="logo.png" alt="SANAM"/></div>
+      <div class="badge">قائمة المخالفات</div>
+    </header>
+    <section class="content">
+      <div class="toolbar">
+        <button id="btnRefresh" class="refresh">تحديث</button>
+        <div class="search"><input id="q" type="search" placeholder="ابحث بالنوع/الاسم/الهوية/الجوال/OTP/الجهاز/الموقع/الوردية..."></div>
+      </div>
+      <div id="list" class="list"></div>
+      <div id="empty" class="empty" style="display:none;">لا توجد بيانات.</div>
+    </section>
+  </main>
+<script>
+(function(){
+  const WEB_APP = window.SANAM_CONFIG.WEB_APP_URL;
+  const $ = (s)=>document.querySelector(s);
+  let full=[];
+  $('#btnRefresh').addEventListener('click', load);
+  $('#q').addEventListener('input', render);
+
+  async function load(){
+    $('#list').innerHTML=''; $('#empty').style.display='none';
+    const L = document.createElement('div'); L.className='empty'; L.textContent='جاري التحميل…'; $('#list').appendChild(L);
+    try{
+      const r = await fetch(WEB_APP+'?action=violations_list');
+      const j = await r.json(); full = Array.isArray(j.rows)? j.rows: [];
+      render();
+    }catch(e){ $('#list').innerHTML=''; $('#empty').style.display='block'; $('#empty').textContent='تعذر التحميل'; }
+  }
+  function match(r,q){
+    const s = (r.type+' '+(r.fullName||'')+' '+(r.nationalId||'')+' '+(r.phone||'')+' '+(r.otp||'')+' '+(r.deviceId||'')+' '+(r.location||'')+' '+(r.shift||'')+' '+(r.note||'')).toLowerCase();
+    return s.includes(q.toLowerCase());
+  }
+  function card(r){
+    const el = document.createElement('article'); el.className='card';
+    el.innerHTML = `
+      <div class="head">
+        <div class="title"><span>${r.type||'-'}</span><span class="subtle mono">${r.time||'-'}</span></div>
+        <div class="subtle mono">OTP: ${r.otp||'-'}</div>
+      </div>
+      <div class="row">
+        <div class="kv"><b>الاسم</b><span>${r.fullName||'-'}</span></div>
+        <div class="kv"><b>الهوية</b><span class="mono">${r.nationalId||'-'}</span></div>
+        <div class="kv"><b>الجوال</b><span class="mono">${r.phone||'-'}</span></div>
+        <div class="kv"><b>الجهاز</b><span class="mono">${r.deviceId||'-'}</span></div>
+        <div class="kv"><b>الموقع</b><span>${r.location||'-'}</span></div>
+        <div class="kv"><b>الوردية</b><span>${r.shift||'-'}</span></div>
+        <div class="kv"><b>الدقائق</b><span>${r.minutes!=null?r.minutes:'-'}</span></div>
+        <div class="kv"><b>ملاحظة</b><span>${r.note||'-'}</span></div>
+      </div>`;
+    return el;
+  }
+  function render(){
+    const q = $('#q').value.trim();
+    const rows = full.filter(r=>!q || match(r,q));
+    $('#list').innerHTML=''; $('#empty').style.display = rows.length? 'none':'block';
+    rows.forEach(r=> $('#list').appendChild(card(r)));
+  }
+  load();
+})();
+</script>
+</body>
+</html>

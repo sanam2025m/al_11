@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>سنام — لوحة المتابعة</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <style>
+    .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .tab{ padding:8px 12px; border-radius:999px; background:#efe7e2; border:1px solid #e8e0da; font-weight:800; cursor:pointer; }
+    .tab.active{ background:#6b4f45; color:#fff; }
+    .filters{ display:grid; gap:10px; grid-template-columns:repeat(12,1fr); align-items:end; }
+    .filters .g12{ grid-column:span 12; } .filters .g6{ grid-column:span 12; }
+    .filters .g4{ grid-column:span 12; } .filters .g3{ grid-column:span 6; }
+    @media(min-width:800px){ .filters .g6{ grid-column:span 6; } .filters .g4{ grid-column:span 4; } .filters .g3{ grid-column:span 3; } }
+    .cards{ display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); }
+    .card-sec{ background:#fff; border:1px solid #eadfd7; border-radius:16px; padding:14px; display:grid; gap:8px; }
+    .meta{ font-size:13px; color:#53463f; display:grid; gap:6px; }
+    .pill{ display:inline-flex; gap:6px; align-items:center; padding:4px 8px; border-radius:999px; border:1px solid #eee; font-weight:700; font-size:12px; white-space:nowrap;}
+    .pill.ok{ background:#e8f5e9; border-color:#cde6cf; color:#1b5e20; }
+    .pill.bad{ background:#ffebee; border-color:#ffd1d6; color:#b71c1c; }
+    .muted{ color:#6b6b6b; font-size:12px; }
+    .table-wrap{ overflow:auto; border:1px solid #eadfd7; border-radius:14px; background:#fff; }
+    .table{ width:max(700px,100%); border-collapse:collapse; }
+    .table th,.table td{ border:1px solid #e6e1da; padding:8px 10px; text-align:center; font-size:14px; }
+    .kicker{ font-size:12px; color:#6b6b6b; }
+    .row-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+    .count{ font-weight:800; color:#6b4f45; }
+  </style>
+  <script>
+    // ضع رابط Web App هنا
+    window.SANAM_CONFIG = { WEB_APP_URL: "https://script.google.com/macros/s/AKfycbzPP4B6t38M-jwM1sqaZYZD3Eyws1wF6TJEZ3t4k2Dx0_iPaIL3fNFhkCcc65VaD0xk/exec" };
+  </script>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div class="brand"><img src="logo.png" alt="SANAM"/></div>
+      <div class="badge">لوحة المتابعة — الحضور & الحالات الأمنية</div>
+      <div class="kicker">مصممة للجوال — مع فلاتر وزمن حقيقي</div>
+    </header>
+
+    <section class="content">
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-tab="sec">الحالات الأمنية</div>
+        <div class="tab" data-tab="att">الحضور/الانصراف</div>
+      </div>
+
+      <!-- =============== Filters =============== -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="filters">
+          <div class="form-group g3">
+            <label>من تاريخ</label>
+            <input id="fFrom" type="date"/>
+          </div>
+          <div class="form-group g3">
+            <label>إلى تاريخ</label>
+            <input id="fTo" type="date"/>
+          </div>
+          <div class="form-group g4">
+            <label>الموقع</label>
+            <select id="fLoc"></select>
+          </div>
+          <div class="form-group g6">
+            <label>بحث</label>
+            <input id="fQ" type="search" placeholder="اسم/هوية/جوال/وصف/جهاز..."/>
+          </div>
+          <div class="form-group g3">
+            <label>&nbsp;</label>
+            <button id="btnApply" class="btn">تطبيق الفلاتر</button>
+          </div>
+          <div class="form-group g3">
+            <label>&nbsp;</label>
+            <button id="btnClear" class="btn outline">مسح</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============== Security Cards =============== -->
+      <div id="secPane">
+        <div class="kicker" style="margin:0 0 8px;">عدد النتائج: <span id="secCount" class="count">0</span></div>
+        <div id="secList" class="cards"></div>
+        <div id="secEmpty" class="kicker" style="display:none;">لا توجد حالات ضمن الفلاتر.</div>
+      </div>
+
+      <!-- =============== Attendance Table =============== -->
+      <div id="attPane" style="display:none">
+        <div class="kicker" style="margin:0 0 8px;">عدد السجلات: <span id="attCount" class="count">0</span></div>
+        <div class="table-wrap">
+          <table class="table" id="attTable">
+            <thead>
+              <tr>
+                <th>الوقت</th>
+                <th>العملية</th>
+                <th>الموقع</th>
+                <th>الوردية</th>
+                <th>الاسم</th>
+                <th>الهوية</th>
+                <th>الجوال</th>
+                <th>الجهاز</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+const LOCATIONS = {
+  "": {lat:0,lon:0,radius:0},
+  "جولات ميدانية": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "المكاتب الامامية": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "المكاتب الخلفية": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة الدخول":   { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة الخروج":   { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة 1":        { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة 2":        { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة 3":        { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة 4":        { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "المصلى":         { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "B1":             { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "B2":             { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "كنترول":         { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "Amany":          { lat: 21.362401699505586, lon: 39.819594631396775, radius: 100 }
+};
+const WEB_APP = window.SANAM_CONFIG.WEB_APP_URL;
+const $ = s=>document.querySelector(s);
+
+function fillLocations(){
+  const sel = $("#fLoc");
+  sel.innerHTML = Object.keys(LOCATIONS).map(n=>`<option value="${n}">${n||"كل المواقع"}</option>`).join("");
+}
+fillLocations();
+
+// Tabs
+$("#tabs").addEventListener("click", e=>{
+  const t = e.target.closest(".tab"); if(!t) return;
+  [...$("#tabs").children].forEach(x=>x.classList.remove("active")); t.classList.add("active");
+  const k = t.dataset.tab;
+  $("#secPane").style.display = (k==="sec")?'block':'none';
+  $("#attPane").style.display = (k==="att")?'block':'none';
+});
+
+// Filters
+$("#btnApply").addEventListener("click", ()=>{ loadSecurity(); loadAttendance(); });
+$("#btnClear").addEventListener("click", ()=>{
+  $("#fFrom").value=""; $("#fTo").value=""; $("#fLoc").value=""; $("#fQ").value="";
+  loadSecurity(); loadAttendance();
+});
+
+function qs(){
+  const p = new URLSearchParams();
+  const f = $("#fFrom").value, t=$("#fTo").value, l=$("#fLoc").value, q=$("#fQ").value.trim();
+  if(f) p.set("date_from", f); if(t) p.set("date_to", t);
+  if(l) p.set("location", l); if(q) p.set("q", q);
+  return p.toString();
+}
+
+// Security
+async function loadSecurity(){
+  $("#secList").innerHTML="";
+  const res = await fetch(WEB_APP + "?action=security_list&" + qs());
+  const j = await res.json();
+  const rows = Array.isArray(j.rows)? j.rows: [];
+  $("#secCount").textContent = rows.length;
+  if(!rows.length){ $("#secEmpty").style.display="block"; return; } else { $("#secEmpty").style.display="none"; }
+  rows.forEach(r=> $("#secList").appendChild(secCard(r)));
+}
+function secCard(r){
+  const el = document.createElement("article"); el.className="card-sec";
+  const notified = (String(r.clientNotified||'').includes('نعم'));
+  const files = (r.files||'').split(/\\n+/).filter(Boolean);
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      <div style="font-weight:800">${r.location||'-'}</div>
+      <div class="pill ${notified?'ok':'bad'}">${notified?'أُبلغ المشرف':'لم يُبلّغ'}</div>
+    </div>
+    <div class="meta">
+      <div>المبلّغ: <b>${r.fullName||'-'}</b></div>
+      <div>التاريخ: <b>${r.incidentDate||'-'}</b> — من <b>${r.startTime||'-'}</b> إلى <b>${r.endTime||'-'}</b></div>
+      <div>الوصف: ${r.description||'-'}</div>
+      ${r.clientInstruction? `<div>توجيهات المشرف: <b>${r.clientInstruction}</b></div>`: ''}
+      ${files.length? `<div>مرفقات: ${files.map((u,i)=>`<a href="${u}" target="_blank">ملف ${i+1}</a>`).join(' · ')}</div>`:''}
+    </div>`;
+  return el;
+}
+
+// Attendance
+async function loadAttendance(){
+  const res = await fetch(WEB_APP + "?action=attendance_list&" + qs());
+  const j = await res.json();
+  const rows = Array.isArray(j.rows)? j.rows: [];
+  $("#attCount").textContent = rows.length;
+  const tb = $("#attTable tbody"); tb.innerHTML = "";
+  rows.forEach(r=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${r.time||'-'}</td><td>${r.op||'-'}</td><td>${r.location||'-'}</td><td>${r.shift||'-'}</td>
+                    <td>${r.fullName||'-'}</td><td>${r.nationalId||'-'}</td><td>${r.phone||'-'}</td><td class="mono">${r.deviceId||'-'}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{ loadSecurity(); loadAttendance(); });
+</script>
+</body>
+</html>

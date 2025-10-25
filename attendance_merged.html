@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سنام — صفحة التحضير (مُدمجة)</title>
+<link rel="stylesheet" href="styles.css">
+<script>
+  // ربط موحّد مع GAS
+  window.SANAM_CONFIG = { WEB_APP_URL: "https://script.google.com/macros/s/AKfycbzPP4B6t38M-jwM1sqaZYZD3Eyws1wF6TJEZ3t4k2Dx0_iPaIL3fNFhkCcc65VaD0xk/exec" };
+</script>
+<style>
+  .field{ margin:14px 0; }
+  .field label{ display:block; font-weight:800; margin:8px 4px; }
+  .input, select, textarea{ width:100%; padding:14px; border:1px solid #e2d8d0; border-radius:14px; background:#f2eee9; outline:none; }
+  .input:focus, select:focus, textarea:focus{ box-shadow:0 0 0 3px rgba(107,79,69,.2); background:#fff; }
+  .row{ display:grid; grid-template-columns:1fr; gap:12px; }
+  @media(min-width:720px){ .row-2{ grid-template-columns:1fr 1fr; } }
+  .card{ background:#fff; border:1px solid #eadfd7; border-radius:16px; padding:16px; }
+  .btn{ padding:14px 16px; border-radius:14px; border:1px solid #d8cec7; background:#8b8176; color:#fff; font-weight:800; width:100%; cursor:pointer; }
+  .btn.secondary{ background:#fff; color:#444; }
+  .btn.ghost{ background:linear-gradient(#fff,#faf7f4); color:#444; }
+  .btn.warn{ background:#8b6a5f; }
+  .muted{ color:#767676; font-size:13px; }
+  .hidden{ display:none; }
+  .preview{ max-width:100%; border:1px dashed #cdbfb3; border-radius:12px; margin-top:10px; }
+  .msg{ font-size:12px; color:#b71c1c; margin-top:6px; display:none; }
+  .invalid{ border-color:#ffb3bd !important; box-shadow:0 0 0 3px rgba(183,28,28,.15)!important; background:#fff!important; }
+  .hint{ font-size:12px; color:#8a7a6f; }
+</style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div class="brand"><img src="logo.png" alt="SANAM"></div>
+      <div class="badge">نموذج التحضير</div>
+    </header>
+
+    <section class="content card">
+      <div class="row row-2">
+        <div class="field">
+          <label for="location">الموقع</label>
+          <select id="location" class="input"></select>
+          <div id="location-msg" class="msg"></div>
+          <div class="hint">يتم التحقق من وجودك داخل نطاق الموقع قبل التسجيل.</div>
+        </div>
+
+        <div class="field">
+          <label for="fullName">الاسم الرباعي</label>
+          <input id="fullName" class="input" type="text" placeholder="اكتب الاسم الرباعي حسب الهوية" required>
+          <div id="fullName-msg" class="msg"></div>
+        </div>
+
+        <div class="field">
+          <label for="shift">الوردية</label>
+          <select id="shift" class="input" required></select>
+          <div id="shift-msg" class="msg"></div>
+          <div class="hint">تُحدَّد تلقائيًا حسب الوقت ويمكن تعديلها يدويًا.</div>
+        </div>
+
+        <div class="field">
+          <label for="workType">نوع الدوام</label>
+          <select id="workType" class="input" required>
+            <option value="">اختر نوع الدوام</option>
+            <option value="رسمي">رسمي</option>
+            <option value="تغطية">تغطية</option>
+            <option value="إضافي">إضافي</option>
+          </select>
+          <div id="workType-msg" class="msg"></div>
+        </div>
+
+        <div class="field">
+          <label for="nationalId">رقم الهوية</label>
+          <input id="nationalId" class="input" type="tel" inputmode="numeric" maxlength="10" placeholder="10 أرقام" required>
+          <div id="nationalId-msg" class="msg"></div>
+        </div>
+
+        <div class="field">
+          <label for="phone">رقم الجوال</label>
+          <input id="phone" class="input" type="tel" inputmode="tel" maxlength="10" placeholder="05XXXXXXXX" required>
+          <div id="phone-msg" class="msg"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="note">ملاحظة</label>
+        <textarea id="note" rows="3" class="input" placeholder="ملاحظة (اختياري)"></textarea>
+      </div>
+
+      <div class="field">
+        <label>الإجراءات</label>
+        <div class="row">
+          <button id="btnCheckIn" class="btn">تسجيل الحضور</button>
+          <button id="btnCheckOut" class="btn ghost secondary">تسجيل الانصراف</button>
+          <button id="btnEarlyOut" class="btn warn">انصراف مبكر</button>
+        </div>
+      </div>
+
+      <!-- لوحة الانصراف المبكر -->
+      <div id="earlyPanel" class="card hidden" style="margin-top:10px;">
+        <h3 style="margin:6px 0 10px;">سبب الانصراف المبكر</h3>
+        <div class="field">
+          <textarea id="earlyReason" rows="4" class="input" placeholder="اكتب السبب باختصار..."></textarea>
+          <div class="muted">السبب مطلوب لتأكيد الانصراف المبكر.</div>
+        </div>
+        <div class="field">
+          <label>صورة (اختياري)</label>
+          <input id="earlyImage" type="file" accept="image/*" class="input">
+          <img id="earlyPreview" class="preview hidden" alt="معاينة الصورة">
+        </div>
+        <div class="row">
+          <button id="btnEarlyConfirm" class="btn">تأكيد الانصراف المبكر</button>
+          <button id="btnEarlyCancel" class="btn ghost secondary">إلغاء</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+// ====== تهيئة المواقع (Geofence) والورديات ======
+const LOCATIONS = {
+  "جولات ميدانية": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "المكاتب الامامية": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "المكاتب الخلفية": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة الدخول": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة الخروج": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة 1": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة 2": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة 3": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "بوابة 4": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "المصلى": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "B1": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "B2": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "كنترول": { lat: 21.402653715612537, lon: 39.790482002560196, radius: 500 },
+  "Amany": { lat: 21.362401699505586, lon: 39.819594631396775, radius: 100 }
+};
+const SHIFT_LIST = ["07:00-15:00","15:00-23:00","23:00-07:00"];
+
+// ====== دوال مساعدة عامة ======
+const $ = (id)=>document.getElementById(id);
+const msgs = {
+  location: $('location-msg'),
+  fullName: $('fullName-msg'),
+  shift: $('shift-msg'),
+  workType: $('workType-msg'),
+  nationalId: $('nationalId-msg'),
+  phone: $('phone-msg')
+};
+const fields = {
+  location: $('location'),
+  fullName: $('fullName'),
+  shift: $('shift'),
+  workType: $('workType'),
+  nationalId: $('nationalId'),
+  phone: $('phone'),
+  note: $('note')
+};
+
+function setMsg(el, text){ if(!el) return; el.textContent = text||''; el.style.display = text? 'block':'none'; }
+function markValid(input, ok){ if(!input) return; input.classList.toggle('invalid', !ok); }
+function onlyDigits(s){ return String(s||'').replace(/\D+/g,''); }
+
+function riyadhMinutesNow(){
+  const now = new Date();
+  const hh = now.getHours(), mm = now.getMinutes();
+  return hh*60 + mm;
+}
+function parseShiftRange(r){
+  if(!r || r.indexOf('-')<0) return {start:null,end:null};
+  const [s,e]=r.split('-');
+  const [sh,sm]=s.split(':').map(Number);
+  const [eh,em]=e.split(':').map(Number);
+  return { start: sh*60+sm, end: eh*60+em };
+}
+function inWindow(now, start, end){
+  if(start===null || end===null) return false;
+  if(start<=end) return now>=start && now<end;
+  return now>=start || now<end; // overnight
+}
+function autoPickShift(){
+  const sel = fields.shift;
+  if(!sel) return;
+  if(sel.options.length===0){
+    SHIFT_LIST.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+  }
+  const now = riyadhMinutesNow();
+  for(let i=0;i<sel.options.length;i++){
+    const val = sel.options[i].value;
+    const r = parseShiftRange(val);
+    if(inWindow(now, r.start, r.end)){ sel.value = val; break; }
+  }
+  updateShiftState();
+}
+document.addEventListener('DOMContentLoaded', autoPickShift);
+
+// ————— تعبئة المواقع
+(function fillLocations(){
+  const sel = fields.location;
+  sel.innerHTML = '<option value="" selected>اختر الموقع</option>' + Object.keys(LOCATIONS).map(n=>`<option value="${n}">${n}</option>`).join('');
+})();
+
+// ====== تحققات الحقول ======
+function validateLocation(){ const ok = !!fields.location.value; markValid(fields.location, ok); setMsg(msgs.location, ok?'':'اختر الموقع'); return ok; }
+function validateShift(){ const ok = !!fields.shift.value; markValid(fields.shift, ok); setMsg(msgs.shift, ok?'':'اختر الوردية'); return ok; }
+function validateWorkType(){ const ok = !!fields.workType.value && ['رسمي','تغطية','إضافي'].includes(fields.workType.value); markValid(fields.workType, ok); setMsg(msgs.workType, ok?'':'اختر نوع الدوام (رسمي/تغطية/إضافي).'); return ok; }
+function validateFullName(){ const name = fields.fullName.value.trim(); const ok = !!name && name.split(' ').length>=4; markValid(fields.fullName, ok); setMsg(msgs.fullName, ok?'':'الاسم الرباعي مطلوب'); return ok; }
+function validateNationalId(){ const v = onlyDigits(fields.nationalId.value); const ok = /^\d{10}$/.test(v); markValid(fields.nationalId, ok); setMsg(msgs.nationalId, ok?'':'رقم الهوية يجب أن يكون 10 أرقام'); return ok; }
+function validatePhone(){ const v = fields.phone.value.trim(); const ok = /^05\d{8}$/.test(v); markValid(fields.phone, ok); setMsg(msgs.phone, ok?'':'رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام'); return ok; }
+function formValid(){ return [validateLocation(), validateShift(), validateWorkType(), validateFullName(), validateNationalId(), validatePhone()].every(Boolean); }
+
+fields.location.addEventListener('change', validateLocation);
+fields.shift.addEventListener('change', ()=>{ validateShift(); updateShiftState(); });
+fields.workType.addEventListener('change', validateWorkType);
+fields.fullName.addEventListener('input', validateFullName);
+fields.nationalId.addEventListener('input', validateNationalId);
+fields.phone.addEventListener('input', validatePhone);
+
+// ====== جيولكيشن + النطاق ======
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371000; const toRad=x=>x*Math.PI/180;
+  const dLat=toRad(lat2-lat1), dLon=toRad(lon2-lon1);
+  const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function checkGeofence(selected, point){
+  const cfg = LOCATIONS[selected];
+  if(!cfg) return {ok:false, reason:'موقع غير معروف'};
+  const d = haversine(point.lat, point.lon, cfg.lat, cfg.lon);
+  return { ok: d <= cfg.radius, distance: Math.round(d), radius: cfg.radius };
+}
+function getPosition(){
+  return new Promise((resolve,reject)=>{
+    if(!navigator.geolocation) return reject(new Error('المتصفح لا يدعم تحديد الموقع'));
+    navigator.geolocation.getCurrentPosition(
+      p=>resolve({lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy||0}),
+      err=>reject(new Error('تعذر الحصول على الإحداثيات: '+err.message)),
+      {enableHighAccuracy:true, timeout:10000, maximumAge:0}
+    );
+  });
+}
+
+// ====== حالة الوردية (ديكور بسيط حسب الوقت) ======
+function updateShiftState(){
+  // يمكن إضافة تلوين أو شارة للوردية الحالية لاحقًا
+}
+
+// ====== رفع صورة الانصراف المبكر ======
+let earlyImageBase64 = "";
+$('earlyImage').addEventListener('change', async (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f){ $('earlyPreview').classList.add('hidden'); earlyImageBase64=''; return; }
+  const b64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); });
+  earlyImageBase64 = b64; const img=$('earlyPreview'); img.src=b64; img.classList.remove('hidden');
+});
+
+// ====== أزرار الانصراف المبكر ======
+$('btnEarlyOut').addEventListener('click', ()=> $('earlyPanel').classList.remove('hidden'));
+$('btnEarlyCancel').addEventListener('click', ()=> $('earlyPanel').classList.add('hidden'));
+
+// ====== إرسال إلى GAS ======
+async function getDeviceId_(){
+  const key="sanam_device_id"; let id=localStorage.getItem(key);
+  if(!id){ id="WEB-"+Math.random().toString(36).slice(2); localStorage.setItem(key,id); }
+  return id;
+}
+async function postAttendance(op, extra){
+  if(!formValid()) return;
+  // Geofence
+  let pos;
+  try{ pos = await getPosition(); }catch(e){ alert(e.message); return; }
+  const fence = checkGeofence(fields.location.value, pos);
+  if(!fence.ok){ alert("خارج نطاق الموقع المحدد (المسافة: "+fence.distance+" م، النطاق: "+fence.radius+" م)"); return; }
+
+  const payload = Object.assign({
+    action:"attendance",
+    op,
+    location: fields.location.value,
+    shift: fields.shift.value,
+    workType: fields.workType.value,
+    fullName: fields.fullName.value.trim(),
+    nationalId: onlyDigits(fields.nationalId.value),
+    phone: fields.phone.value.trim(),
+    reason: fields.note.value.trim(),
+    deviceId: await getDeviceId_(),
+    lat: pos.lat, lon: pos.lon, acc: pos.acc
+  }, extra||{});
+
+  const btn = document.activeElement;
+  if(btn && btn.tagName==="BUTTON"){ const old=btn.textContent; btn.disabled=true; btn.textContent='...'; setTimeout(()=>{ btn.disabled=false; btn.textContent=old; }, 1500); }
+
+  try{
+    const r = await fetch(window.SANAM_CONFIG.WEB_APP_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+    const j = await r.json();
+    if(j.ok && j.violation){ alert("تنبيه: تم رصد مخالفة (نفس الجهاز لأكثر من هوية)."); }
+    alert(j.ok ? "تمت العملية" : ("تعذر: "+(j.error||"")));
+  }catch(err){
+    alert("خطأ في الاتصال: "+err.message);
+  }
+}
+
+$('btnCheckIn').addEventListener('click', ()=> postAttendance('checkin'));
+$('btnCheckOut').addEventListener('click', ()=> postAttendance('checkout'));
+$('btnEarlyConfirm').addEventListener('click', ()=>{
+  const reason = $('earlyReason').value.trim();
+  if(!reason) return alert('السبب مطلوب');
+  postAttendance('early_checkout', { reason, imageBase64: earlyImageBase64 });
+  $('earlyPanel').classList.add('hidden'); $('earlyReason').value=''; $('earlyImage').value=''; $('earlyPreview').classList.add('hidden');
+});
+</script>
+</body>
+</html>

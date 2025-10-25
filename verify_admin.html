@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>سنام — إدارة التوثيق</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>
+    window.SANAM_CONFIG = { WEB_APP_URL: "https://script.google.com/macros/s/AKfycbzPP4B6t38M-jwM1sqaZYZD3Eyws1wF6TJEZ3t4k2Dx0_iPaIL3fNFhkCcc65VaD0xk/exec" };
+  </script>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div class="brand"><img src="logo.png" alt="SANAM"/></div>
+      <div class="badge">إدارة توثيق الأجهزة</div>
+    </header>
+    <section class="content">
+      <div class="actions">
+        <button class="btn" id="btnFetch">تحديث القائمة</button>
+      </div>
+      <div id="list"></div>
+    </section>
+  </main>
+  <script>
+  (async function(){
+    const list = document.getElementById('list');
+    const WEB_APP = window.SANAM_CONFIG.WEB_APP_URL;
+    document.getElementById('btnFetch').addEventListener('click', load);
+    async function load(){
+      list.innerHTML = '...';
+      const url = WEB_APP + '?action=list_verifications'; // Apps Script returns HTML table or JSON string
+      try{
+        const r = await fetch(url, {method:'GET'});
+        const t = await r.text();
+        // Accept raw HTML for convenience (returned by doGet)
+        list.innerHTML = t;
+      }catch(e){ list.textContent = 'تعذر التحميل'; }
+    }
+    load();
+  })();
+  </script>
+</body>
+</html>

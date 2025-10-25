@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>سنام — إدارة التغطيات (عرض قائمة)</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script>
+    window.SANAM_CONFIG = { WEB_APP_URL: "https://script.google.com/macros/s/AKfycbzPP4B6t38M-jwM1sqaZYZD3Eyws1wF6TJEZ3t4k2Dx0_iPaIL3fNFhkCcc65VaD0xk/exec" };
+  </script>
+  <style>
+    .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+    .tabs{ display:flex; gap:6px; }
+    .tab{ padding:8px 12px; border-radius:999px; background:#efe7e2; border:1px solid #e8e0da; font-weight:700; cursor:pointer; user-select:none; }
+    .tab.active{ background:#6b4f45; color:#fff; }
+    .search{ flex:1; min-width:220px; }
+    .search input{ width:100%; padding:12px; border:1px solid #e2d8d0; border-radius:14px; background:#f2eee9; outline:none; }
+    .search input:focus{ box-shadow:0 0 0 3px rgba(107,79,69,.2); background:#fff; }
+    .refresh{ padding:10px 12px; border-radius:12px; border:1px solid #e2d8d0; background:#fff; cursor:pointer; }
+
+    .list{ display:grid; gap:12px; }
+    .card{ background:#fff; border:1px solid #eadfd7; border-radius:16px; padding:14px; display:grid; gap:10px; }
+    .head{ display:flex; align-items:center; gap:10px; justify-content:space-between; }
+    .title{ font-weight:800; font-size:16px; display:flex; gap:8px; align-items:center; }
+    .pill{ display:inline-flex; gap:6px; align-items:center; padding:6px 10px; border-radius:999px; border:1px solid #eee; font-weight:700; font-size:12px; white-space:nowrap; }
+    .pill.pending{ background:#fff8e1; border-color:#ffe0b2; color:#8a5300; }
+    .pill.ok{ background:#e8f5e9; border-color:#cde6cf; color:#1b5e20; }
+    .pill.bad{ background:#ffebee; border-color:#ffd1d6; color:#b71c1c; }
+    .meta{ display:grid; gap:8px; grid-template-columns:1fr; }
+    .row{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    @media(min-width:900px){ .row{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
+    .kv{ background:#f9f6f2; border:1px dashed #e7dbd2; border-radius:12px; padding:10px; }
+    .kv b{ display:block; color:#6a5d52; font-size:12px; margin-bottom:6px; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+    .btn{ padding:10px 12px; border-radius:12px; border:1px solid #e2d8d0; background:#fff; cursor:pointer; font-weight:700; font-size:12px; }
+    .btn.primary{ background:#6b4f45; border-color:#6b4f45; color:#fff; }
+    .btn.warn{ background:#fff; color:#b71c1c; border-color:#ffd1d6; }
+    .subtle{ color:#7a7a7a; font-size:12px; }
+    .empty{ text-align:center; color:#777; padding:24px; border:1px dashed #e4d7cd; border-radius:16px; background:#fff; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div class="brand"><img src="logo.png" alt="SANAM"/></div>
+      <div class="badge">إدارة طلبات التغطية — عرض قائمة</div>
+      <a class="badge" href="index.html" style="text-decoration:none;background:#948979">الرئيسية</a>
+    </header>
+
+    <section class="content">
+      <div class="toolbar">
+        <div class="tabs" id="tabs">
+          <div class="tab active" data-status="all">الكل</div>
+          <div class="tab" data-status="بانتظار الاعتماد">بانتظار</div>
+          <div class="tab" data-status="مقبول">مقبول</div>
+          <div class="tab" data-status="مرفوض">مرفوض</div>
+        </div>
+        <button id="btnRefresh" class="refresh">تحديث</button>
+        <div class="search"><input id="q" type="search" placeholder="ابحث بالاسم/الهوية/الموقع/الآيبان/OTP/الجهاز..."></div>
+      </div>
+
+      <div id="list" class="list"></div>
+      <div id="empty" class="empty" style="display:none;">لا توجد بيانات مطابقة.</div>
+    </section>
+  </main>
+
+<script>
+(function(){
+  const WEB_APP = window.SANAM_CONFIG.WEB_APP_URL;
+  const $ = (sel)=>document.querySelector(sel);
+  let full = []; let filterStatus='all';
+
+  $("#tabs").addEventListener('click', (e)=>{
+    const t = e.target.closest('.tab'); if(!t) return;
+    [...$("#tabs").children].forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    filterStatus = t.dataset.status;
+    render();
+  });
+  $("#btnRefresh").addEventListener('click', load);
+  $("#q").addEventListener('input', render);
+
+  async function load(){
+    $("#list").innerHTML = "";
+    $("#empty").style.display = "none";
+    const loading = document.createElement('div'); loading.className='empty'; loading.textContent='جاري التحميل…'; $("#list").appendChild(loading);
+    try{
+      const r = await fetch(WEB_APP+'?action=coverage_list');
+      const j = await r.json();
+      full = Array.isArray(j.rows)? j.rows: [];
+      render();
+    }catch(e){
+      $("#list").innerHTML = ""; $("#empty").style.display='block'; $("#empty").textContent='تعذر التحميل';
+    }
+  }
+
+  function pill(status){
+    const c = status==='مقبول'?'ok':(status==='مرفوض'?'bad':'pending');
+    return `<span class="pill ${c}">${status||'-'}</span>`;
+  }
+  function match(r, q){
+    const s = (r.name+' '+r.nationalId+' '+r.phone+' '+r.location+' '+r.shift+' '+r.amount+' '+r.iban+' '+r.coveredName+' '+r.coveredNid+' '+r.deviceId+' '+r.otp).toLowerCase();
+    return s.includes(q.toLowerCase());
+  }
+
+  function render(){
+    const q = $("#q").value.trim();
+    const rows = full.filter(r => filterStatus==='all' || r.status===filterStatus)
+                     .filter(r => !q || match(r,q));
+    $("#list").innerHTML = "";
+    $("#empty").style.display = rows.length? 'none':'block';
+    rows.forEach(r=> $("#list").appendChild(card(r)));
+  }
+
+  function card(r){
+    const el = document.createElement('article');
+    el.className='card';
+    el.dataset.row = r.rowIndex || '';
+    el.innerHTML = `
+      <div class="head">
+        <div class="title">
+          <span>${r.name||'-'}</span>
+          <span class="subtle mono">#${r.seq??'-'}</span>
+        </div>
+        <div>${pill(r.status)}</div>
+      </div>
+      <div class="meta">
+        <div class="row">
+          <div class="kv"><b>OTP</b><span class="mono">${r.otp||'-'}</span></div>
+          <div class="kv"><b>الهوية</b><span class="mono">${r.nationalId||'-'}</span></div>
+          <div class="kv"><b>الجوال</b><span class="mono">${r.phone||'-'}</span></div>
+          <div class="kv"><b>الموقع</b><span>${r.location||'-'}</span></div>
+          <div class="kv"><b>الوردية</b><span>${r.shift||'-'}</span></div>
+          <div class="kv"><b>المبلغ</b><span>${(r.amount!=null)? (r.amount+' ر.س'):'-'}</span></div>
+          <div class="kv"><b>IBAN</b><span class="mono">${r.iban||'-'}</span></div>
+          <div class="kv"><b>المُغطّى عنه</b><span>${r.coveredName||'-'} — <span class="mono">${r.coveredNid||'-'}</span></span></div>
+          <div class="kv"><b>الجهاز</b><span class="mono">${r.deviceId||'-'}</span></div>
+          <div class="kv"><b>الوقت</b><span>${r.time||'-'}</span></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" data-act="approve">قبول</button>
+        <button class="btn" data-act="reject">رفض</button>
+        <button class="btn warn" data-act="copy" data-val="${r.otp||''}">نسخ OTP</button>
+      </div>
+    `;
+    return el;
+  }
+
+  document.body.addEventListener('click', async (e)=>{
+    const btn = e.target.closest('button.btn'); if(!btn) return;
+    const card = btn.closest('.card'); const rowIndex = card?.dataset?.row;
+    const act = btn.dataset.act;
+    if(act==='copy'){
+      const val = btn.dataset.val || ''; if(!val) return alert('لا يوجد OTP');
+      try{ await navigator.clipboard.writeText(val); btn.textContent='✓ نُسخ'; setTimeout(()=>btn.textContent='نسخ OTP',800);}catch(_){}
+      return;
+    }
+    if(!rowIndex) return alert('لا يوجد رقم صف');
+    const decision = (act==='approve')?'approve':'reject';
+    btn.disabled=true; const old=btn.textContent; btn.textContent='...';
+    try{
+      const r = await fetch(WEB_APP, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'coverage_decide', rowIndex:Number(rowIndex), decision }) });
+      const j = await r.json();
+      if(j.ok){ await load(); } else { alert('تعذر: '+(j.error||'')); }
+    }catch(err){ alert(err.message); }
+    finally{ btn.disabled=false; btn.textContent=old; }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

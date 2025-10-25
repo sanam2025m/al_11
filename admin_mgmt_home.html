@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>سنام — لوحة تحكم الإدارة</title>
+  <!-- Inline unified theme (merged from styles.css) -->
+  <style>
+    /* =================== SANAM — Unified Theme (RTL, Mobile-first) =================== */
+    :root{
+      --bg:#faf6f1; --paper:#ffffff; --line:#e8e0da; --ink:#1f1b19; --muted:#6f6a66;
+      --brown:#6b4f45; --gold:#b89067; --sand:#efe7e2; --chip:#f6efe9;
+      --ok:#1b5e20; --bad:#b71c1c; --shadow:0 16px 48px rgba(0,0,0,.10); --radius:18px;
+    }
+    *{box-sizing:border-box} html,body{height:100%} html{scroll-behavior:smooth}
+    body{
+      margin:0; direction:rtl; color:var(--ink);
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Noto Naskh Arabic","Tajawal","Dubai",Arial;
+      background:
+        url('background.png') center/cover no-repeat,
+        radial-gradient(80% 100% at 50% 0%, #fff 0%, #faf2e7 60%, #f2e6d8 100%);
+      min-height:100dvh;
+    }
+    .container{max-width:1100px; margin-inline:auto; padding:16px}
+    .header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+      padding:10px 14px; box-shadow:0 12px 32px rgba(0,0,0,.06); margin-bottom:14px;
+      position:sticky; top:10px; z-index:20;
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:900}
+    .brand a{display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit}
+    .brand img{height:46px; width:auto; filter:drop-shadow(0 4px 12px rgba(0,0,0,.10))}
+    .badge{background:var(--chip); border:1px solid var(--line); color:var(--brown);
+      padding:8px 10px; border-radius:12px; font-weight:800; font-size:12px}
+    .card{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+      padding:16px; box-shadow:var(--shadow)}
+    .btn{appearance:none; border:1px solid var(--line); background:#fff; color:var(--ink);
+      padding:12px 14px; border-radius:14px; font-weight:900; cursor:pointer;
+      transition:transform .08s ease, box-shadow .12s ease, background .12s ease}
+    .btn:hover{transform:translateY(-1px); box-shadow:0 10px 20px rgba(0,0,0,.08)}
+    .btn.primary{background:var(--gold); color:#fff; border-color:var(--gold);
+      box-shadow:0 6px 14px rgba(184,144,103,.22)}
+    .btn.secondary{background:#3a3735; color:#fff; border-color:#3a3735; box-shadow:0 6px 14px rgba(0,0,0,.18)}
+    .tabs{display:flex; gap:8px; flex-wrap:wrap}
+    .tab{padding:8px 12px; border-radius:999px; background:var(--sand);
+      border:1px solid var(--line); font-weight:800; cursor:pointer}
+    .tab.active{background:var(--brown); color:#fff}
+    .pill{display:inline-flex; gap:6px; align-items:center; padding:6px 10px;
+      border-radius:999px; border:1px solid var(--line); font-weight:800; font-size:12px}
+    .pill.ok{background:#e8f5e9; border-color:#cde6cf; color:var(--ok)}
+    .pill.bad{background:#ffebee; border-color:#ffd1d6; color:var(--bad)}
+    .grid{display:grid; gap:12px} .g3{grid-template-columns:1fr}
+    @media(min-width:760px){ .g3{grid-template-columns:repeat(3,1fr)} }
+    .center{text-align:center} .kicker{color:var(--muted); font-size:12px}
+
+    /* ===== Page-specific: Admin Management Home ===== */
+    .top{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .menu-wrap{position:relative}
+    .menu-btn{border:1px solid var(--line); background:#fff; padding:10px; border-radius:12px;
+      display:grid; place-items:center; cursor:pointer}
+    .dropdown{position:absolute; right:0; top:120%; background:#fff; border:1px solid var(--line);
+      border-radius:16px; box-shadow:0 14px 40px rgba(0,0,0,.08); min-width:250px; display:none; overflow:hidden}
+    .dropdown.open{display:block}
+    .dropdown header{padding:10px 12px; font-size:12px; color:#7a6f68; border-bottom:1px solid #f0e9e2}
+    .dropdown a{display:flex; align-items:center; gap:10px; padding:12px; text-decoration:none; color:#1f1b19; font-weight:800}
+    .dropdown a:hover{background:#faf6f1}
+    .ic{width:26px; height:26px; display:grid; place-items:center; border-radius:8px; background:#f3ece6; border:1px solid #e9ded6}
+    .hero{display:grid; place-items:center; margin:28px 0 16px}
+    .hero img{width:min(170px,40vw); height:auto; margin-bottom:8px; filter:drop-shadow(0 6px 14px rgba(0,0,0,.12))}
+    h1{margin:6px 0 0; font-size:clamp(20px,3.8vw,28px)}
+    .cards{display:grid; gap:12px; grid-template-columns:1fr; margin-bottom:28px}
+    @media(min-width:760px){ .cards{grid-template-columns:repeat(3,1fr)} }
+    .card-link{ background:#fff; border:1px solid var(--line); border-radius:20px; padding:16px;
+      text-decoration:none; color:#1f1b19; display:flex; align-items:center; gap:14px;
+      box-shadow:0 10px 24px rgba(0,0,0,.06); transition:transform .08s ease, box-shadow .12s ease }
+    .card-link:hover{ transform:translateY(-1px); box-shadow:0 16px 30px rgba(0,0,0,.09) }
+    .ico{width:46px; height:46px; border-radius:14px; background:#efe7e2; display:grid; place-items:center; border:1px solid var(--line)}
+    .ico svg{width:22px; height:22px}
+    .txt{display:grid; gap:4px} .txt b{font-size:16px} .badge-line{font-size:12px; color:#6d645c}
+    .footer{ text-align:center; color:#8b8176; font-size:12px; margin:10px 0 24px }
+  
+    .bubble{ display:inline-grid; place-items:center; min-width:22px; height:22px;
+      padding:0 6px; border-radius:999px; background:#b89067; color:#fff; font-size:12px; font-weight:900; margin-right:6px }
+    .bubble.gray{ background:#6b4f45 }
+    .dropdown a .bubble{ margin-right:auto; } /* push to left inside item */
+  </style>
+</head>
+<body>
+  <script>
+    // ضع رابط الـ Web App هنا
+    window.SANAM_CONFIG = { WEB_APP_URL: "https://script.google.com/macros/s/AKfycbzPP4B6t38M-jwM1sqaZYZD3Eyws1wF6TJEZ3t4k2Dx0_iPaIL3fNFhkCcc65VaD0xk/exec" };
+  </script>
+
+  <div class="container">
+    <!-- Top bar -->
+    <header class="header">
+      <div class="brand">
+        <a href="admin_home.html" title="العودة إلى الرئيسية">
+          <img src="logo.png" alt="SANAM"/>
+          <span class="title">لوحة تحكم الإدارة</span>
+        </a>
+      </div>
+      <div class="menu-wrap">
+        <button class="menu-btn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-label="القائمة">
+          <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#6b4f45" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+        </button>
+        <nav class="dropdown" id="dropdown" role="menu">
+          <header>روابط الصفحات</header>
+          <a href="coverage_admin_list.html"><span class="bubble" id="bCov">0</span>
+            <span class="ic"><svg viewBox="0 0 24 24"><path fill="#6b4f45" d="M19 7v4h-2V9h-3V7h5M8 7h5v2H8v3H6V7h2m13-5H3a2 2 0 0 0-2 2v16c0 1.11.89 2 2 2h18a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2M3 20V4h18v16H3Z"/></svg></span>
+            <span>إدارة التغطية</span>
+          </a>
+          <a href="violations_updated.html"><span class="bubble gray" id="bViol">0</span>
+            <span class="ic"><svg viewBox="0 0 24 24"><path fill="#6b4f45" d="M12 2a10 10 0 1 1 0 20A10 10 0 0 1 12 2m1 5h-2v6h2V7m0 8h-2v2h2v-2Z"/></svg></span>
+            <span>قائمة المخالفات</span>
+          </a>
+          <a href="verify_admin.html"><span class="bubble gray" id="bVer">0</span>
+            <span class="ic"><svg viewBox="0 0 24 24"><path fill="#6b4f45" d="M7 3h10v2H7V3m0 4h10v2H7V7m0 4h10v2H7v-2m-4 4h18v2H3v-2Z"/></svg></span>
+            <span>توثيق الأجهزة</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero center">
+      <img src="logo.png" alt="SANAM" />
+      <h1>مرحبًا بك في لوحة تحكم الإدارة</h1>
+      <div class="kicker">اختر إحدى الصفحات التالية</div>
+    </section>
+
+    <!-- Quick Cards -->
+    <section class="cards" aria-label="اختصارات">
+      <a class="card-link" href="coverage_admin_list.html">
+        <span class="ico"><svg viewBox="0 0 24 24"><path fill="#6b4f45" d="M19 7v4h-2V9h-3V7h5M8 7h5v2H8v3H6V7h2m13-5H3a2 2 0 0 0-2 2v16c0 1.11.89 2 2 2h18a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2M3 20V4h18v16H3Z"/></svg></span>
+        <div class="txt">
+          <b>إدارة التغطية</b> <span class="bubble" id="cCov">0</span>
+          <span class="badge-line">قبول/رفض الطلبات وعرض التفاصيل</span>
+        </div>
+      </a>
+      <a class="card-link" href="violations_updated.html">
+        <span class="ico"><svg viewBox="0 0 24 24"><path fill="#6b4f45" d="M12 2a10 10 0 1 1 0 20A10 10 0 0 1 12 2m1 5h-2v6h2V7m0 8h-2v2h2v-2Z"/></svg></span>
+        <div class="txt">
+          <b>قائمة المخالفات</b> <span class="bubble gray" id="cViol">0</span>
+          <span class="badge-line">بحث شامل + OTP لكل مخالفة</span>
+        </div>
+      </a>
+      <a class="card-link" href="verify_admin.html">
+        <span class="ico"><svg viewBox="0 0 24 24"><path fill="#6b4f45" d="M7 3h10v2H7V3m0 4h10v2H7V7m0 4h10v2H7v-2m-4 4h18v2H3v-2Z"/></svg></span>
+        <div class="txt">
+          <b>توثيق الأجهزة</b> <span class="bubble gray" id="cVer">0</span>
+          <span class="badge-line">إدارة طلبات التوثيق + بريد</span>
+        </div>
+      </a>
+    </section>
+
+    <footer class="footer center">بالضغط على الشعار في أي صفحة يمكنك العودة لهذه الصفحة</footer>
+  </div>
+
+  <script>
+    const btn = document.getElementById('menuBtn');
+    const drop = document.getElementById('dropdown');
+    btn.addEventListener('click', ()=>{
+      drop.classList.toggle('open');
+      btn.setAttribute('aria-expanded', drop.classList.contains('open')?'true':'false');
+    });
+    document.addEventListener('click', (e)=>{
+      if(!drop.contains(e.target) && !btn.contains(e.target)) drop.classList.remove('open');
+    });
+  </script>
+
+  <script>
+    const API = (window.SANAM_CONFIG && SANAM_CONFIG.WEB_APP_URL) || "";
+    async function getJSON(url){ try{ const r = await fetch(url); return await r.json(); }catch(_){ return {}; } }
+
+    async function refreshBadges(){
+      if(!API) return;
+      // تغطية — حالات "بانتظار الاعتماد"
+      const cov = await getJSON(API + "?action=coverage_list");
+      const covRows = Array.isArray(cov.rows) ? cov.rows : [];
+      const covPending = covRows.filter(r => String(r.status||'').includes('انتظار') || String(r.status||'')==='بانتظار الاعتماد').length;
+      setBadge('Cov', covPending);
+
+      // مخالفات — اليوم فقط
+      const today = new Date(); const y = today.getFullYear();
+      const m = String(today.getMonth()+1).padStart(2,'0');
+      const d = String(today.getDate()).padStart(2,'0');
+      const vio = await getJSON(API + "?action=violations_list");
+      const vioRows = Array.isArray(vio.rows) ? vio.rows : [];
+      const vioToday = vioRows.filter(r => (r.time||'').startsWith(`${y}-${m}-${d}`)).length;
+      setBadge('Viol', vioToday);
+
+      // توثيق — حالات "معلق/بانتظار"
+      const ver = await getJSON(API + "?action=verify_list");
+      const verRows = Array.isArray(ver.rows) ? ver.rows : [];
+      const verPend = verRows.filter(r => {
+        const st = String(r.status||'').trim();
+        return st==='' || st==='معلق' || st.includes('انتظار');
+      }).length;
+      setBadge('Ver', verPend);
+    }
+    function setBadge(key, val){
+      ['b'+key,'c'+key].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = String(val); });
+    }
+    document.addEventListener('DOMContentLoaded', refreshBadges);
+    // تحديث كل 90 ثانية
+    setInterval(refreshBadges, 90000);
+  </script>
+
+</body>
+</html>
